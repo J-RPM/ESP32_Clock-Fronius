@@ -1,4 +1,5 @@
 /*
+                            *** ESP32_Solar_JR ***
                           --- Audio information ---
                    >>> Download: Game_Audio Library <<<
    http://www.buildlog.net/blog/wp-content/uploads/2018/02/Game_Audio.zip
@@ -42,7 +43,7 @@
 //////////////////////////////////////////////////////////
 // Two time zones, voice prompts and Pac-Man animations //
 //////////////////////////////////////////////////////////
-static String HWversion = "v1.51"; 
+static String HWversion = "v1.52"; 
 
 ////////////////////////// INVERTER //////////////////////////////////////////////
 static String IPinverter = "192.168.1.112";
@@ -208,7 +209,7 @@ void setup() {
 
   display.setTextSize(1);   
   display.setCursor(2,16);   
-  display.println(F("TIME-INVER"));
+  display.println(F("TIME-SOLAR"));
   display.setCursor(15,26);   
   display.println(HWversion);
 
@@ -222,7 +223,7 @@ void setup() {
   }else{
     mText = mText + zone2;    
   }
-  mText = mText + "  " + HWversion + " ";
+  mText = mText + " SOLAR  " + HWversion + " ";
   scrollText();
   delay(1000);
 
@@ -455,6 +456,7 @@ void readConfig(){
   // 13 - Time Zone
   T_Zone2 = EEPROM.read(13);
   PRINT("\nT_Zone2: ",T_Zone2);
+  PRINTS("\n");
 
    // Close EEPROM    
   EEPROM.commit();
@@ -600,9 +602,13 @@ void Oled_Time() {
 void oled_power() { 
   int p;
   display.clearDisplay();
-  display.setCursor(8,0);   // center time display
   display.setTextSize(1);   
-  display.println(CurrentTime);
+  if (display_EU == true) {
+    display.setCursor(8,0);   // center EU time display
+  }else {
+    display.setCursor(0,0);   // center USA time display
+  }
+  display.println(CurrentTime.substring(0,10));
 
   // Power select to OLED dispaly
   display.setTextSize(2);   
@@ -811,7 +817,7 @@ void append_webpage_header() {
   webpage += "</style>";
  
   webpage += "<link rel=\"stylesheet\" href=\"https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css\"/>";
-  webpage += "<html><head><title>NTP Time & Inverter</title>";
+  webpage += "<html><head><title>NTP Time & Solar</title>";
   webpage += "</head>";
   webpage += "<script>";
   webpage += "function SendBright()";
@@ -824,7 +830,7 @@ void append_webpage_header() {
   webpage += "}";
   webpage += "</script>";
   webpage += "<div id=\"mark\">";
-  webpage += "<div id=\"header\"><h1 class=\"animate__animated animate__flash\">NTP Time & Inverter " + HWversion + "</h1>";
+  webpage += "<div id=\"header\"><h1 class=\"animate__animated animate__flash\">NTP Time & Solar " + HWversion + "</h1>";
 }
 //////////////////////////////////////////////////////////////////////////////
 void button_Home() {
@@ -875,18 +881,23 @@ void NTP_Clock_home_page() {
 
   webpage += "<div id=\"section\">";
   button_Home();
-  webpage += "<p><a href=\"\\DISPLAY_MODE_USA\"><type=\"button\" class=\"button\">USA mode</button></a>";
-  webpage += "<a href=\"\\DISPLAY_MODE_EU\"><type=\"button\" class=\"button\">EU mode</button></a></p>";
 
-  webpage += "<p><a href=\"\\DISPLAY_DATE\"><type=\"button\" class=\"button\">Show Date";
-  if (display_date==true) webpage += " = ON"; 
+  webpage += "<p><a href=\"\\DISPLAY_MODE_USA\"><type=\"button\" class=\"button\">USA mode";
+  if (display_EU == false) webpage += " #";
   webpage += "</button></a>";
-  webpage += "<a href=\"\\DISPLAY_NO_DATE\"><type=\"button\" class=\"button\">Only Time";
-  if (display_date==false) webpage += " = ON"; 
+  webpage += "<a href=\"\\DISPLAY_MODE_EU\"><type=\"button\" class=\"button\">EU mode";
+  if (display_EU == true) webpage += " #";
   webpage += "</button></a></p>";
 
-  webpage += "<p><a href=\"\\CARRILLON\"><type=\"button\" class=\"button\">Chime ";
-  if (sound_chime==true) webpage += "OFF"; else webpage += "ON"; 
+  webpage += "<p><a href=\"\\DISPLAY_DATE\"><type=\"button\" class=\"button\">Show Date";
+  if (display_date==true) webpage += " #"; 
+  webpage += "</button></a>";
+  webpage += "<a href=\"\\DISPLAY_NO_DATE\"><type=\"button\" class=\"button\">Only Time";
+  if (display_date==false) webpage += " #"; 
+  webpage += "</button></a></p>";
+
+  webpage += "<p><a href=\"\\CARRILLON\"><type=\"button\" class=\"button\">Chime = ";
+  if (sound_chime==true) webpage += "ON"; else webpage += "OFF"; 
   webpage += "</button></a>";
   webpage += "<a href=\"\\sPAC\"><type=\"button\" class=\"button\">Pac-Man</button></a>";
   webpage += "<a href=\"\\SOUND\"><type=\"button\" class=\"button\">Sound TIME</button></a></p>";
@@ -895,33 +906,37 @@ void NTP_Clock_home_page() {
   webpage += "<a>Brightness<br>MIN(0) <input type=\"range\" name=\"Bright\" min=\"0\" max=\"15\" value=\"";
   webpage += brightness;
   webpage += "\"> (15)MAX</a></form>";
-  webpage += "<p><a href=\"\"><type=\"button\" onClick=\"SendBright()\" class=\"button\">Send Brightness</button></a></p>";
+  webpage += "<p><a href=\"\\HOME\"><type=\"button\" onClick=\"SendBright()\" class=\"button\">Send Brightness</button></a></p>";
   
   webpage += "<p><a href=\"\\DISPLAY_INVERTER\"><type=\"button\" class=\"button\">Inverter";
-  if (display_inverter==true) webpage += " = ON"; 
+  if (display_inverter==true) webpage += " #"; 
   webpage += "</button></a>";
   webpage += "<a href=\"\\DISPLAY_NO_INVERTER\"><type=\"button\" class=\"button\">Only Time";
-  if (display_inverter==false) webpage += " = ON"; 
+  if (display_inverter==false) webpage += " #"; 
   webpage += "</button></a></p>";
   
   webpage += "<p><a href=\"\\DISPLAY_INVERTER_MODE=0\"><type=\"button\" class=\"button\">Solar";
-  if ((inverter_mode==0) && (display_inverter==true)) webpage += " = ON"; 
+  if ((inverter_mode==0) && (display_inverter==true)) webpage += " #"; 
   webpage += "</button></a>";
   webpage += "<a href=\"\\DISPLAY_INVERTER_MODE=1\"><type=\"button\" class=\"button\">Load";
-  if ((inverter_mode==1) && (display_inverter==true)) webpage += " = ON"; 
+  if ((inverter_mode==1) && (display_inverter==true)) webpage += " #"; 
   webpage += "</button></a>";
   webpage += "<a href=\"\\DISPLAY_INVERTER_MODE=2\"><type=\"button\" class=\"button\">Grid";
-  if ((inverter_mode==2) && (display_inverter==true)) webpage += " = ON"; 
+  if ((inverter_mode==2) && (display_inverter==true)) webpage += " #"; 
   webpage += "</button></a></p>";
  
-  webpage += "<hr class=\"line\">";
+  webpage += "<br><hr class=\"line\">";
 
-  webpage += "<p><a href=\"\\RESTART_1\"><type=\"button\" class=\"button\">RTC: ";
+  webpage += "<p><a href=\"\\RESTART_1\"><type=\"button\" class=\"button\">RTC = ";
   webpage += zone1;
+  if (T_Zone2 == false)  webpage += " #";
   webpage += "</button></a>";
-  webpage += "<a href=\"\\RESTART_2\"><type=\"button\" class=\"button\">RTC: ";
+
+  webpage += "<a href=\"\\RESTART_2\"><type=\"button\" class=\"button\">RTC = ";
   webpage += zone2;
+  if (T_Zone2 == true)  webpage += " #";
   webpage += "</button></a></p>";
+
   webpage += "<br><p><a href=\"\\RESET_WIFI\"><type=\"button\" class=\"button button2\">Reset WiFi</button></a></p>";
   webpage += "</div>";
   end_webpage();
@@ -1251,6 +1266,7 @@ void _bright_15() {
 void _save_bright(){
   brightness_matrix();
   responseWeb();
+  responseWeb();
 }
 /////////////////////////////////////////////////////////////////
 void _restart_1() {
@@ -1332,8 +1348,8 @@ void checkServer(){
   server.on("/BRIGHT=3", _bright_3); 
   server.on("/BRIGHT=4", _bright_4); 
   server.on("/BRIGHT=5", _bright_5); 
-  server.on("/BRIGHT=5", _bright_6); 
-  server.on("/BRIGHT=7", _bright_6); 
+  server.on("/BRIGHT=6", _bright_6); 
+  server.on("/BRIGHT=7", _bright_7); 
   server.on("/BRIGHT=8", _bright_8); 
   server.on("/BRIGHT=9", _bright_9); 
   server.on("/BRIGHT=10", _bright_10); 
